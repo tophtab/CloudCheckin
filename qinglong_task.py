@@ -7,6 +7,19 @@ REPO_ROOT = Path(__file__).resolve().parent
 # (minutes) to enable it.
 DEFAULT_RANDOM_DELAY_MAX_MINUTES = 0
 NO_DELAY_FLAG = "--no-delay"
+DEFAULT_CURL_CFFI_LIB_DIR = "/ql/data/codercheckin_libs"
+
+
+def _curl_cffi_lib_dir() -> Path | None:
+    """Optional directory holding an isolated curl_cffi for this deployment.
+
+    Qinglong may host other scripts that require a newer curl_cffi in the
+    shared site-packages; codercheckin keeps its pinned version in a separate
+    directory (see README) and imports it ahead of site-packages.
+    """
+    raw = os.environ.get("CHECKIN_CURL_CFFI_LIB_DIR", "").strip()
+    path = Path(raw) if raw else Path(DEFAULT_CURL_CFFI_LIB_DIR)
+    return path if path.is_dir() else None
 
 
 def _bootstrap_paths() -> None:
@@ -16,17 +29,24 @@ def _bootstrap_paths() -> None:
     subscription subdirectory, and checkin_runner spawns platform modules via
     ``python -m``, which resolves against the inherited PYTHONPATH.
     """
-    if str(REPO_ROOT) not in sys.path:
-        sys.path.insert(0, str(REPO_ROOT))
+    lib_dir = _curl_cffi_lib_dir()
+    priority = [str(REPO_ROOT)]
+    if lib_dir:
+        priority.insert(0, str(lib_dir))
+
+    for entry in priority:
+        if entry not in sys.path:
+            sys.path.insert(0, entry)
 
     entries = [
         entry
         for entry in os.environ.get("PYTHONPATH", "").split(os.pathsep)
         if entry
     ]
-    if str(REPO_ROOT) not in entries:
-        entries.insert(0, str(REPO_ROOT))
-        os.environ["PYTHONPATH"] = os.pathsep.join(entries)
+    for entry in priority:
+        if entry not in entries:
+            entries.insert(0, entry)
+    os.environ["PYTHONPATH"] = os.pathsep.join(entries)
 
 
 _bootstrap_paths()

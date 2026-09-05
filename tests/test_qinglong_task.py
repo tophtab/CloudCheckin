@@ -132,6 +132,30 @@ def test_bootstrap_is_idempotent(monkeypatch: pytest.MonkeyPatch) -> None:
     assert os.environ["PYTHONPATH"].split(os.pathsep) == [str(qinglong_task.REPO_ROOT)]
 
 
+def test_bootstrap_prepends_isolated_curl_cffi_dir(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    lib_dir = tmp_path / "codercheckin_libs"
+    lib_dir.mkdir()
+    monkeypatch.setenv("CHECKIN_CURL_CFFI_LIB_DIR", str(lib_dir))
+
+    qinglong_task._bootstrap_paths()
+
+    try:
+        assert str(lib_dir) in sys.path
+        assert str(lib_dir) in os.environ["PYTHONPATH"].split(os.pathsep)
+        site_packages_index = next(
+            index
+            for index, entry in enumerate(sys.path)
+            if "site-packages" in entry
+        )
+        assert sys.path.index(str(lib_dir)) < site_packages_index
+    finally:
+        if str(lib_dir) in sys.path:
+            sys.path.remove(str(lib_dir))
+
+
 def test_wrapper_scripts_bind_expected_targets() -> None:
     nodeseek_task = importlib.import_module("nodeseek_task")
     deepflood_task = importlib.import_module("deepflood_task")

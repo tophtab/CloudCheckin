@@ -6,7 +6,6 @@ import time
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
-from importlib import metadata
 from typing import IO, TypeAlias
 
 from config import REQUIRED_CURL_CFFI_VERSION
@@ -235,19 +234,24 @@ def _print_failure_output(target: str, recent_output: list[tuple[str, str]]) -> 
 
 
 def validate_curl_cffi_version() -> None:
-    """Fail fast when curl_cffi is missing or is not the pinned version."""
+    """Fail fast when the curl_cffi actually imported is not the pinned version."""
     try:
-        installed = metadata.version("curl_cffi")
-    except metadata.PackageNotFoundError:
+        import curl_cffi
+    except ImportError:
         raise RuntimeError(
-            "curl_cffi is not installed; install the pinned version: "
-            f"pip3 install curl_cffi=={REQUIRED_CURL_CFFI_VERSION}"
+            "curl_cffi is not importable; install the pinned version "
+            f"(`pip3 install curl_cffi=={REQUIRED_CURL_CFFI_VERSION}`) or set up "
+            "the isolated library directory for coexisting versions "
+            "(see README Qinglong section)"
         ) from None
+
+    installed = str(getattr(curl_cffi, "__version__", ""))
     if installed != REQUIRED_CURL_CFFI_VERSION:
         raise RuntimeError(
-            f"curl_cffi {installed} does not match the pinned version "
-            f"{REQUIRED_CURL_CFFI_VERSION}; reinstall with: "
-            f"pip3 install curl_cffi=={REQUIRED_CURL_CFFI_VERSION}"
+            f"imported curl_cffi {installed or 'unknown'} does not match the pinned "
+            f"version {REQUIRED_CURL_CFFI_VERSION}; fix with "
+            f"`pip3 install curl_cffi=={REQUIRED_CURL_CFFI_VERSION}` or the isolated "
+            "library directory for coexisting versions (see README Qinglong section)"
         )
 
 

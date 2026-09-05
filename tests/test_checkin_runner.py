@@ -1,7 +1,7 @@
-import checkin_runner
 import io
 import subprocess
 import sys
+import types
 
 import pytest
 
@@ -408,23 +408,22 @@ def test_run_targets_wraps_subprocess_start_failures_with_target_context(
 
 
 def test_validate_curl_cffi_version_passes_when_pinned(monkeypatch) -> None:
-    monkeypatch.setattr(checkin_runner.metadata, "version", lambda name: "0.14.0")
+    fake = types.SimpleNamespace(__version__="0.14.0")
+    monkeypatch.setitem(sys.modules, "curl_cffi", fake)
 
     validate_curl_cffi_version()
 
 
 def test_validate_curl_cffi_version_fails_on_mismatch(monkeypatch) -> None:
-    monkeypatch.setattr(checkin_runner.metadata, "version", lambda name: "0.17.1")
+    fake = types.SimpleNamespace(__version__="0.17.1")
+    monkeypatch.setitem(sys.modules, "curl_cffi", fake)
 
     with pytest.raises(RuntimeError, match="does not match the pinned"):
         validate_curl_cffi_version()
 
 
 def test_validate_curl_cffi_version_fails_when_missing(monkeypatch) -> None:
-    def raise_missing(name: str) -> str:
-        raise checkin_runner.metadata.PackageNotFoundError(name)
+    monkeypatch.setitem(sys.modules, "curl_cffi", None)
 
-    monkeypatch.setattr(checkin_runner.metadata, "version", raise_missing)
-
-    with pytest.raises(RuntimeError, match="not installed"):
+    with pytest.raises(RuntimeError, match="not importable"):
         validate_curl_cffi_version()
