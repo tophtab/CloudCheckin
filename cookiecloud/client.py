@@ -67,6 +67,64 @@ def _get_cookiecloud_cookie(domains: list[str]) -> str:
     return "; ".join(f"{name}={value}" for name, value in merged.items())
 
 
+def _parse_cookiecloud_single_var(raw: str) -> dict[str, str] | None:
+    """Parse the single multi-line ``COOKIECLOUD`` env var (AgentMore-compatible).
+
+    Each line is ``key=value``. Blank lines, ``#`` comments, and unknown keys are
+    ignored so the exact same value can be shared with other scripts; ``domain``
+    is accepted but unused because cookie matching happens per target domain.
+    """
+    config: dict[str, str] = {}
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        config[key.strip().lower()] = value.strip()
+
+    host = config.get("host", "").rstrip("/")
+    uuid = config.get("uuid", "")
+    password = config.get("password", "")
+
+    missing = [
+        name
+        for name, value in (
+            ("host", host),
+            ("uuid", uuid),
+            ("password", password),
+        )
+        if not value
+    ]
+    if missing:
+        log(f"COOKIECLOUD env config is missing: {', '.join(missing)}")
+        return None
+
+    return {"host": host, "uuid": uuid, "password": password}
+
+
+def _resolve_cookiecloud_config() -> dict[str, str] | None:
+    """Resolve Cookie Cloud connection settings from env vars.
+
+    The single multi-line ``COOKIECLOUD`` variable wins so one Qinglong value can
+    be shared across scripts; otherwise fall back to the three legacy variables.
+    """
+    single_raw = os.environ.get("COOKIECLOUD", "").strip()
+    if single_raw:
+        config = _parse_cookiecloud_single_var(single_raw)
+        if config is not None:
+            log("Using single-variable COOKIECLOUD config")
+            return config
+
+    url = os.environ.get("COOKIE_CLOUD_URL", "").strip().rstrip("/")
+    uuid = os.environ.get("COOKIE_CLOUD_UUID", "").strip()
+    password = os.environ.get("COOKIE_CLOUD_PASSWORD", "").strip()
+
+    if not url or not uuid or not password:
+        return None
+
+    return {"host": url, "uuid": uuid, "password": password}
+
+
 def _fetch_cookiecloud_payload():
     global _COOKIE_CLOUD_CACHE
     global _COOKIE_CLOUD_FETCH_ATTEMPTED
@@ -79,19 +137,19 @@ def _fetch_cookiecloud_payload():
     if _COOKIE_CLOUD_CACHE is not None:
         return _COOKIE_CLOUD_CACHE
 
-    url = os.environ.get("COOKIE_CLOUD_URL", "").strip().rstrip("/")
-    uuid = os.environ.get("COOKIE_CLOUD_UUID", "").strip()
-    password = os.environ.get("COOKIE_CLOUD_PASSWORD", "").strip()
-    crypto_type = os.environ.get("COOKIE_CLOUD_CRYPTO_TYPE", "").strip()
-
-    if not url or not uuid or not password:
+    config = _resolve_cookiecloud_config()
+    if config is None:
         return None
+
+    uuid = config["uuid"]
+    password = config["password"]
+    crypto_type = os.environ.get("COOKIE_CLOUD_CRYPTO_TYPE", "").strip()
 
     query = ""
     if crypto_type:
         query = f"?{urlencode({'crypto_type': crypto_type})}"
 
-    endpoint = f"{url}/get/{uuid}{query}"
+    endpoint = f"{config['host']}/get/{uuid}{query}"
 
     payload = _request_cookiecloud_payload("get", endpoint)
     if payload:

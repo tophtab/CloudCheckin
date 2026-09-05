@@ -28,6 +28,8 @@ COOKIE_CLOUD_UUID=your-uuid
 COOKIE_CLOUD_PASSWORD=your-password
 ```
 
+也支持单条多行变量 `COOKIECLOUD`（格式见下文青龙面板章节）；两种写法同时存在时优先 `COOKIECLOUD`。
+
 也可以手动配置 Cookie：
 
 ```env
@@ -106,15 +108,17 @@ docker exec -it qinglong pip3 install requests curl_cffi==0.14.0 python-dotenv c
 
 ### 3. 环境变量
 
-用 Cookie Cloud 时新建**三条**变量：
+新建**一条** `COOKIECLOUD` 变量，值为多行文本（每行一条 `参数=值`，参数名与 CookieCloud 官方一致）：
 
-```env
-COOKIE_CLOUD_URL=http://192.168.31.100:8088
-COOKIE_CLOUD_UUID=扩展里的用户UUID
-COOKIE_CLOUD_PASSWORD=扩展里的加密密码
+```text
+host=http://192.168.31.100:8088
+uuid=扩展里的用户UUID
+password=扩展里的加密密码
 ```
 
-> 排障提示：青龙容器可能访问不了公网 CookieCloud 地址，优先使用内网地址（如上例）。
+- 如果青龙上已部署 AgentMore 并配过 `COOKIECLOUD`，codercheckin 直接复用同一条变量值，无需再填。
+- `host` / `uuid` / `password` 三项必需；允许出现 `domain=` 等额外行或 `#` 注释行，会被忽略（codercheckin 按各平台域名自行匹配 Cookie）。
+- 兼容旧的三条变量 `COOKIE_CLOUD_URL` / `COOKIE_CLOUD_UUID` / `COOKIE_CLOUD_PASSWORD`（Docker 场景）；两者同时存在时优先 `COOKIECLOUD`。
 
 不走 CookieCloud 时直接配平台 Cookie：`NODESEEK_COOKIE` / `DEEPFLOOD_COOKIE`（多账号用 `&` 分隔）、`V2EX_COOKIE`。
 
