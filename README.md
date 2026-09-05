@@ -94,27 +94,19 @@ docker compose run --rm codercheckin python run.py
 
 ### 2. 安装 Python 依赖
 
-青龙不会自动安装 `requirements.txt`。按是否存在版本冲突二选一：
-
-**场景一：无冲突**——「依赖管理 → Python3 → 创建依赖」一次填入（空格分隔）：
+青龙不会自动安装 `requirements.txt`。到「依赖管理 → Python3 → 创建依赖」一次填入（空格分隔），版本可以和其他脚本共用同一份：
 
 ```text
-requests curl_cffi==0.14.0 python-dotenv cryptography
+requests curl_cffi python-dotenv cryptography
 ```
 
 也可以在宿主机一条命令装完（容器名按实际调整）：
 
 ```bash
-docker exec -it qinglong pip3 install requests curl_cffi==0.14.0 python-dotenv cryptography -i https://pypi.tuna.tsinghua.edu.cn/simple
+docker exec -it qinglong pip3 install requests curl_cffi python-dotenv cryptography -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-**场景二：青龙上有其他脚本需要更新版的 curl_cffi**——同一个 Python 环境装不下两个版本，给 codercheckin 单独隔离一份 0.14.0，其余包按场景一安装：
-
-```bash
-docker exec -it qinglong pip3 install --target /ql/data/codercheckin_libs curl_cffi==0.14.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-脚本启动时若发现该目录存在，会自动优先从它 import `curl_cffi`，全局环境里的最新版原样保留给其他脚本。目录在 `/ql/data` 下，容器重建后仍在；代码通过环境变量 `CHECKIN_CURL_CFFI_LIB_DIR` 可改路径。
+`curl_cffi` 从 0.14 起均兼容（最新 0.16.x 已实测），代码在 import 时校验版本不低于 0.14，过低会立即报错并打印升级命令，不会带病跑到网络请求。
 
 ### 3. 环境变量
 
@@ -156,7 +148,7 @@ password=扩展里的加密密码
 | CookieCloud 拉取失败 / 网络不可达 | 青龙容器可能访问不了公网地址，改用内网地址（如 `http://192.168.31.100:8088`） |
 | CookieCloud 中未找到某平台 Cookie | 浏览器扩展确认同步域名覆盖对应站点，手动同步一次后重跑 |
 | 依赖安装失败 | 查看「依赖管理」日志里的完整报错；网络不通时改用国内 pip 镜像（见第 2 步） |
-| 启动即报 `curl_cffi` 版本不匹配 / 未安装 | 有其他脚本需要新版 curl_cffi 时按场景二做隔离目录；否则卸载重复条目、只保留 `curl_cffi==0.14.0`（import 时强校验，报错里带修复命令） |
+| 启动即报 `curl_cffi` 过低 / 未安装 | 容器内执行 `pip3 install -U curl_cffi` 升级即可，全局最新版可与其他脚本共用（import 时强校验，报错里带修复命令） |
 | 日志出现 `ImportError` / `ModuleNotFoundError` | 「依赖文件」没填：共享代码（`qinglong_task.py`、平台包等）靠它复制进脚本目录（见第 1 步） |
 
 ## 支持平台

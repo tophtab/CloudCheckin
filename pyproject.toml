@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "requests",
-    "curl_cffi==0.14.0",
+    "curl_cffi>=0.14",
     "python-dotenv",
     "cryptography",
     "croniter",

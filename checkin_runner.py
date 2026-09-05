@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import IO, TypeAlias
 
-from config import REQUIRED_CURL_CFFI_VERSION
+from config import MIN_CURL_CFFI_VERSION
 from cookiecloud.client import resolve_cookie_value
 from runtime_log import log
 
@@ -233,25 +233,31 @@ def _print_failure_output(target: str, recent_output: list[tuple[str, str]]) -> 
         log(line)
 
 
+def _major_minor(version: str) -> tuple[int, int] | None:
+    parts = version.split(".")
+    try:
+        return int(parts[0]), int(parts[1])
+    except (IndexError, ValueError):
+        return None
+
+
 def validate_curl_cffi_version() -> None:
-    """Fail fast when the curl_cffi actually imported is not the pinned version."""
+    """Fail fast when the curl_cffi actually imported is older than the floor."""
     try:
         import curl_cffi
     except ImportError:
         raise RuntimeError(
-            "curl_cffi is not importable; install the pinned version "
-            f"(`pip3 install curl_cffi=={REQUIRED_CURL_CFFI_VERSION}`) or set up "
-            "the isolated library directory for coexisting versions "
-            "(see README Qinglong section)"
+            "curl_cffi is not importable; install it with "
+            '`pip3 install "curl_cffi>=0.14"`'
         ) from None
 
     installed = str(getattr(curl_cffi, "__version__", ""))
-    if installed != REQUIRED_CURL_CFFI_VERSION:
+    parsed = _major_minor(installed)
+    if parsed is None or parsed < _major_minor(MIN_CURL_CFFI_VERSION):
         raise RuntimeError(
-            f"imported curl_cffi {installed or 'unknown'} does not match the pinned "
-            f"version {REQUIRED_CURL_CFFI_VERSION}; fix with "
-            f"`pip3 install curl_cffi=={REQUIRED_CURL_CFFI_VERSION}` or the isolated "
-            "library directory for coexisting versions (see README Qinglong section)"
+            f"imported curl_cffi {installed or 'unknown'} is older than the "
+            f"supported floor {MIN_CURL_CFFI_VERSION}; upgrade with "
+            "`pip3 install -U curl_cffi`"
         )
 
 

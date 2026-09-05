@@ -407,18 +407,18 @@ def test_run_targets_wraps_subprocess_start_failures_with_target_context(
     assert "Failed to start module 'v2ex.v2ex': exec format error" in message
 
 
-def test_validate_curl_cffi_version_passes_when_pinned(monkeypatch) -> None:
-    fake = types.SimpleNamespace(__version__="0.14.0")
+def test_validate_curl_cffi_version_passes_on_supported_versions(monkeypatch) -> None:
+    for version in ("0.14.0", "0.16.3", "1.0.0"):
+        fake = types.SimpleNamespace(__version__=version)
+        monkeypatch.setitem(sys.modules, "curl_cffi", fake)
+        validate_curl_cffi_version()
+
+
+def test_validate_curl_cffi_version_fails_below_floor(monkeypatch) -> None:
+    fake = types.SimpleNamespace(__version__="0.13.9")
     monkeypatch.setitem(sys.modules, "curl_cffi", fake)
 
-    validate_curl_cffi_version()
-
-
-def test_validate_curl_cffi_version_fails_on_mismatch(monkeypatch) -> None:
-    fake = types.SimpleNamespace(__version__="0.17.1")
-    monkeypatch.setitem(sys.modules, "curl_cffi", fake)
-
-    with pytest.raises(RuntimeError, match="does not match the pinned"):
+    with pytest.raises(RuntimeError, match="older than the supported floor"):
         validate_curl_cffi_version()
 
 
