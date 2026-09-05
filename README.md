@@ -149,6 +149,7 @@ password=扩展里的加密密码
 | CookieCloud 中未找到某平台 Cookie | 浏览器扩展确认同步域名覆盖对应站点，手动同步一次后重跑 |
 | 依赖安装失败 | 查看「依赖管理」日志里的完整报错；网络不通时改用国内 pip 镜像（见第 2 步） |
 | 启动即报 `curl_cffi` 过低 / 未安装 | 容器内执行 `pip3 install -U curl_cffi` 升级即可，全局最新版可与其他脚本共用（import 时强校验，报错里带修复命令） |
+| 墙外站点签到超时 / 连接被重置 | 代理变量必须配在青龙「环境变量」页（`http_proxy` / `https_proxy`，`no_proxy` 排除 CookieCloud 内网地址）；docker-compose 里的代理变量不保证注入任务进程（青龙对 python 任务会重建环境） |
 | 日志出现 `ImportError` / `ModuleNotFoundError` | 「依赖文件」没填：共享代码（`qinglong_task.py`、平台包等）靠它复制进脚本目录（见第 1 步） |
 
 ## 支持平台
