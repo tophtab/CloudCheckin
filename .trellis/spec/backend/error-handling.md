@@ -194,8 +194,6 @@ codes:
 | Direct platform cookie is set | Use it immediately and skip Cookie Cloud |
 | Direct cookie missing, Cookie Cloud matching domain found | Use Cookie Cloud and log only the safe source label |
 | Direct cookie missing and Cookie Cloud has no match | Fail before making platform network requests |
-| Single `COOKIECLOUD` variable and the three legacy variables are both set | Connection settings come from `COOKIECLOUD` |
-| `COOKIECLOUD` is set but missing host/uuid/password | Log the missing keys and fall back to the legacy variables |
 | `CHECKIN_TARGETS` contains unsupported names | Exit non-zero with the supported target list |
 | One target subprocess exits non-zero | Log failure, continue with later targets, then raise after all targets run |
 | Multiple targets fail | Raise an aggregate error summarizing every failed target |
