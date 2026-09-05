@@ -84,13 +84,27 @@ docker compose run --rm codercheckin python run.py
 | 分支 | `main` |
 | 唯一值 | `codercheckin` |
 | 拉取方式 | 公开仓库留空；私有仓库选「用户名密码/Token」（GitHub PAT，需 repo 权限） |
-| 白名单 | `nodeseek_task.py deepflood_task.py v2ex_task.py`（空格分隔） |
-| 依赖文件 | `requirements.txt`（每次拉取后自动安装依赖） |
+| 白名单 | `nodeseek_task.py\|deepflood_task.py\|v2ex_task.py`（匹配脚本路径的正则，多个用 `\|` 分隔） |
+| 依赖文件 | 留空（该字段用于复制额外脚本文件，不安装依赖） |
 
-保存后手动运行一次订阅：整仓库代码进入 `scripts/codercheckin/`，定时任务里自动生成三个任务。
+保存后手动运行一次订阅：整仓库代码进入 `scripts/tophtab_codercheckin_main/`（目录名由作者/仓库名/分支自动生成），定时任务里自动生成三个任务。
 仓库里的 `tests/`、`README.md` 等会一并拉下来，但白名单之外不会生成任务。
 
-### 2. 环境变量
+### 2. 安装 Python 依赖
+
+青龙不会自动安装 `requirements.txt`，需到「依赖管理 → Python3 → 创建依赖」安装以下包（可一次填多个，空格分隔）：
+
+```text
+requests curl_cffi==0.14.0 python-dotenv cryptography croniter tzdata
+```
+
+也可以在宿主机一条命令装完（容器名按实际调整）：
+
+```bash
+docker exec -it qinglong pip3 install requests curl_cffi==0.14.0 python-dotenv cryptography croniter tzdata -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+### 3. 环境变量
 
 用 Cookie Cloud 时新建**三条**变量：
 
@@ -108,26 +122,26 @@ COOKIE_CLOUD_PASSWORD=扩展里的加密密码
 
 > 注意：`CHECKIN_TARGETS` 在青龙形态下不参与任务选择，每个任务固定运行一个平台。
 
-### 3. 定时任务
+### 4. 定时任务
 
 订阅自动生成三个任务，为每个任务设置定时规则（可以同一时间也可以错开）：
 
-| 任务 | 命令 |
+| 任务 | 命令（订阅自动生成） |
 |---|---|
-| NodeSeek | `task nodeseek_task.py` |
-| Deepflood | `task deepflood_task.py` |
-| V2EX | `task v2ex_task.py` |
+| NodeSeek | `task tophtab_codercheckin_main/nodeseek_task.py` |
+| Deepflood | `task tophtab_codercheckin_main/deepflood_task.py` |
+| V2EX | `task tophtab_codercheckin_main/v2ex_task.py` |
 
 实际开始时间 = 定时时间 + 0–30 分钟随机延迟；每个平台失败后间隔 30 秒重试，最多尝试 3 次。
 手动执行：任务列表点「运行」；调试时在脚本目录运行 `python3 nodeseek_task.py --no-delay` 可跳过随机延迟。
 
-### 4. 排障
+### 5. 排障
 
 | 现象 | 处理 |
 |---|---|
 | CookieCloud 拉取失败 / 网络不可达 | 青龙容器可能访问不了公网地址，改用内网地址（如 `http://192.168.31.100:8088`） |
 | CookieCloud 中未找到某平台 Cookie | 浏览器扩展确认同步域名覆盖对应站点，手动同步一次后重跑 |
-| `curl_cffi` 安装失败 | 查看依赖文件安装的完整报错；尝试更换 pip 镜像源后重新拉取订阅 |
+| 依赖安装失败 | 查看「依赖管理」日志里的完整报错；网络不通时改用国内 pip 镜像（见第 2 步） |
 | 日志出现 `ImportError` / `ModuleNotFoundError` | 确认代码是通过订阅整仓库拉取的，不要只复制单个脚本文件 |
 
 ## 支持平台
