@@ -1,5 +1,4 @@
 import os
-import random
 import sys
 import time
 from collections.abc import Callable
@@ -14,13 +13,17 @@ from checkin_runner import (
     run_targets,
     validate_target_cookies,
 )
+from random_delay import (
+    MAX_RANDOM_START_DELAY_SECONDS,
+    apply_random_start_delay,
+    format_duration,
+)
 from runtime_log import log
 
 
 DEFAULT_CRON = "30 3 * * *"
 DEFAULT_TIMEZONE = "Asia/Shanghai"
 WAIT_STATUS_INTERVAL_SECONDS = 60 * 60
-MAX_RANDOM_START_DELAY_SECONDS = 30 * 60
 
 
 def load_schedule_config() -> tuple[str, str, ZoneInfo]:
@@ -61,21 +64,6 @@ def format_timestamp(value: datetime) -> str:
     return f"{timestamp} ({offset_text})"
 
 
-def format_duration(seconds: float) -> str:
-    remaining_seconds = max(0, int(seconds))
-    hours, remaining_seconds = divmod(remaining_seconds, 60 * 60)
-    minutes, remaining_seconds = divmod(remaining_seconds, 60)
-
-    parts: list[str] = []
-    if hours:
-        parts.append(f"{hours}h")
-    if minutes:
-        parts.append(f"{minutes}m")
-    if remaining_seconds or not parts:
-        parts.append(f"{remaining_seconds}s")
-    return " ".join(parts)
-
-
 def sleep_until(
     target_time: datetime,
     *,
@@ -104,20 +92,6 @@ def sleep_until(
             last_status_log = current_time
 
         sleep(min(seconds_remaining, 60))
-
-
-def apply_random_start_delay(
-    *,
-    randint: Callable[[int, int], int] = random.randint,
-    sleep: Callable[[float], None] = time.sleep,
-) -> int:
-    delay_seconds = randint(0, MAX_RANDOM_START_DELAY_SECONDS)
-    log(
-        "Scheduled check-in random start delay: "
-        f"{format_duration(delay_seconds)} ({delay_seconds} seconds)"
-    )
-    sleep(delay_seconds)
-    return delay_seconds
 
 
 def main() -> int:

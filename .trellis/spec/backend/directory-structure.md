@@ -13,7 +13,9 @@ service clients.
 
 There is no web API layer. The runnable entrypoints are command-line modules:
 `run.py` runs enabled targets once, `scheduler.py` runs targets on a cron
-schedule, and each platform package can be executed with `python -m`.
+schedule, each platform package can be executed with `python -m`, and the
+`nodeseek_task.py` / `deepflood_task.py` / `v2ex_task.py` wrappers are the
+per-platform entrypoints for Qinglong deployments.
 
 ---
 
@@ -28,6 +30,11 @@ schedule, and each platform package can be executed with `python -m`.
 ├── runtime_log.py             # timestamped stdout logging helper
 ├── run.py                     # one-shot check-in entrypoint
 ├── scheduler.py               # cron scheduler entrypoint
+├── random_delay.py            # shared random start delay helper (re-exported by scheduler.py)
+├── qinglong_task.py           # Qinglong runtime: path bootstrap, delay, single-target execution
+├── nodeseek_task.py           # Qinglong wrapper entrypoint for the nodeseek target
+├── deepflood_task.py          # Qinglong wrapper entrypoint for the deepflood target
+├── v2ex_task.py               # Qinglong wrapper entrypoint for the v2ex target
 ├── cookiecloud/               # Cookie Cloud client and cookie resolution
 ├── deepflood/                 # Deepflood platform module
 ├── nodeseek/                  # Nodeseek platform module
@@ -58,6 +65,17 @@ schedule, and each platform package can be executed with `python -m`.
   Telegram notification delivery.
 - Keep process orchestration in `checkin_runner.py`. Do not duplicate target
   parsing, startup cookie validation, or subprocess handling in platform modules.
+- Keep random start delay behavior in `random_delay.py`. `scheduler.py`
+  re-exports `apply_random_start_delay`, `format_duration`, and
+  `MAX_RANDOM_START_DELAY_SECONDS` so existing callers and tests keep working.
+- Keep Qinglong deployment logic in `qinglong_task.py`. It bootstraps
+  `sys.path`/`PYTHONPATH` before importing repo modules (Qinglong runs wrappers
+  from an arbitrary cwd inside a subscription subdirectory), applies the
+  env-configurable random delay (`CHECKIN_RANDOM_DELAY_MAX`, minutes), and runs
+  exactly one target through `run_targets`. Root-level `*_task.py` wrappers bind
+  a single `TARGET` and stay a few lines; never whitelist platform package files
+  directly — they have no delay/retry and cannot import repo modules when run
+  from a subdirectory.
 - For Python scripts, keep the common entrypoint shape: helper functions and
   configuration first, `main() -> int`, then an `if __name__ == "__main__":`
   block that converts exceptions into process exit codes.
@@ -110,3 +128,6 @@ schedule, and each platform package can be executed with `python -m`.
   subprocesses so local `python -m ...` behavior matches Docker/NAS behavior.
 - Do not fold scheduler behavior into `run.py`; keep one-shot execution and
   long-running container scheduling separate.
+- Do not let Qinglong deployment concerns (path bootstrap, delay flags) leak
+  into `checkin_runner.py` or platform packages; they live in
+  `qinglong_task.py` and the root-level `*_task.py` wrappers.

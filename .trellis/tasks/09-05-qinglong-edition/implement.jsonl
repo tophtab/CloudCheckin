@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Pre-development checklist: which backend guides to read before editing this layer"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Module layout rules for new root-level modules (qinglong_task.py, random_delay.py), entrypoint shape, forbidden patterns"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Process flow / exit-code conventions for the new one-shot entry and refactored scheduler"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Log message style for new logs (COOKIECLOUD config line, delay log)"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Test standards for new/extended pytest files"}

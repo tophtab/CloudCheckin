@@ -28,9 +28,14 @@ py-modules = [
     "checkin_response",
     "checkin_runner",
     "config",
-    "runtime_log",
+    "deepflood_task",
+    "nodeseek_task",
+    "qinglong_task",
+    "random_delay",
     "run",
+    "runtime_log",
     "scheduler",
+    "v2ex_task",
 ]
 
 [tool.setuptools.packages.find]
