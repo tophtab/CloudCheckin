@@ -71,7 +71,7 @@ docker compose run --rm codercheckin python run.py
 
 ## 青龙面板
 
-通过 GitHub 私有仓库订阅同步代码；三个平台各自一个定时任务，定时交给青龙，脚本内再随机延迟 0–30 分钟错开整点。
+通过 GitHub 仓库订阅同步代码（公开仓库无需认证，私有仓库用 PAT）；三个平台各自一个定时任务，定时交给青龙，脚本内再随机延迟 0–30 分钟错开整点。
 
 ### 1. 新建订阅
 
@@ -79,11 +79,11 @@ docker compose run --rm codercheckin python run.py
 
 | 配置项 | 填写 |
 |---|---|
-| 类型 | 私有仓库 |
+| 类型 | 公开仓库 / 私有仓库（按仓库实际可见性选） |
 | 链接 | `https://github.com/tophtab/codercheckin` |
 | 分支 | `main` |
 | 唯一值 | `codercheckin` |
-| 拉取方式 | 用户名密码/Token（GitHub PAT，需 repo 权限） |
+| 拉取方式 | 公开仓库留空；私有仓库选「用户名密码/Token」（GitHub PAT，需 repo 权限） |
 | 白名单 | `nodeseek_task.py deepflood_task.py v2ex_task.py`（空格分隔） |
 | 依赖文件 | `requirements.txt`（每次拉取后自动安装依赖） |
 
