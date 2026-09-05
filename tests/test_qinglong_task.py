@@ -8,16 +8,16 @@ import qinglong_task
 from tests.log_assertions import assert_timestamped_lines
 
 
-def test_main_runs_single_target_with_default_delay(monkeypatch) -> None:
+def test_main_runs_single_target_without_delay_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     monkeypatch.delenv("CHECKIN_RANDOM_DELAY_MAX", raising=False)
 
-    delay_calls = []
+    def fail_delay(**kwargs):
+        raise AssertionError("Delay should not run by default")
 
-    def fake_delay(*, max_delay_seconds: int) -> int:
-        delay_calls.append(max_delay_seconds)
-        return 5
-
-    monkeypatch.setattr(qinglong_task, "apply_random_start_delay", fake_delay)
+    monkeypatch.setattr(qinglong_task, "apply_random_start_delay", fail_delay)
 
     run_calls = []
     monkeypatch.setattr(
@@ -28,7 +28,9 @@ def test_main_runs_single_target_with_default_delay(monkeypatch) -> None:
 
     assert qinglong_task.main("nodeseek", argv=[]) == 0
     assert run_calls == [["nodeseek"]]
-    assert delay_calls == [30 * 60]
+
+    output_lines = assert_timestamped_lines(capsys.readouterr().out)
+    assert any("disabled" in line for line in output_lines)
 
 
 def test_main_skips_delay_with_flag(monkeypatch) -> None:
@@ -96,17 +98,13 @@ def test_main_invalid_env_falls_back_to_default(
 ) -> None:
     monkeypatch.setenv("CHECKIN_RANDOM_DELAY_MAX", "abc")
 
-    delay_calls = []
+    def fail_delay(**kwargs):
+        raise AssertionError("Delay should not run when default is disabled")
 
-    def fake_delay(*, max_delay_seconds: int) -> int:
-        delay_calls.append(max_delay_seconds)
-        return 5
-
-    monkeypatch.setattr(qinglong_task, "apply_random_start_delay", fake_delay)
+    monkeypatch.setattr(qinglong_task, "apply_random_start_delay", fail_delay)
     monkeypatch.setattr(qinglong_task, "run_targets", lambda targets: 0)
 
     assert qinglong_task.main("nodeseek", argv=[]) == 0
-    assert delay_calls == [30 * 60]
 
     output_lines = assert_timestamped_lines(capsys.readouterr().out)
     assert any("Invalid CHECKIN_RANDOM_DELAY_MAX" in line for line in output_lines)

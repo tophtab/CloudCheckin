@@ -71,7 +71,7 @@ docker compose run --rm codercheckin python run.py
 
 ## 青龙面板
 
-通过 GitHub 仓库订阅同步代码（公开仓库无需认证，私有仓库用 PAT）；三个平台各自一个定时任务，定时交给青龙，脚本内再随机延迟 0–30 分钟错开整点。
+通过 GitHub 仓库订阅同步代码（公开仓库无需认证，私有仓库用 PAT）；三个平台各自一个定时任务，定时交给青龙，脚本默认到点直接执行。
 
 ### 1. 新建订阅
 
@@ -118,7 +118,7 @@ COOKIE_CLOUD_PASSWORD=扩展里的加密密码
 
 不走 CookieCloud 时直接配平台 Cookie：`NODESEEK_COOKIE` / `DEEPFLOOD_COOKIE`（多账号用 `&` 分隔）、`V2EX_COOKIE`。
 
-可选：`CHECKIN_RANDOM_DELAY_MAX`（随机延迟上限，分钟，默认 30，设为 0 关闭；对三个任务同时生效）。
+可选：`CHECKIN_RANDOM_DELAY_MAX`（随机启动延迟上限，分钟，默认关闭；设为如 `30` 后每个任务到点先随机等待 0–30 分钟再执行，对三个任务同时生效）。
 
 > 注意：`CHECKIN_TARGETS` 在青龙形态下不参与任务选择，每个任务固定运行一个平台。
 
@@ -132,8 +132,8 @@ COOKIE_CLOUD_PASSWORD=扩展里的加密密码
 | Deepflood | `task tophtab_codercheckin_main/deepflood_task.py` |
 | V2EX | `task tophtab_codercheckin_main/v2ex_task.py` |
 
-实际开始时间 = 定时时间 + 0–30 分钟随机延迟；每个平台失败后间隔 30 秒重试，最多尝试 3 次。
-手动执行：任务列表点「运行」；调试时在脚本目录运行 `python3 nodeseek_task.py --no-delay` 可跳过随机延迟。
+每个平台失败后间隔 30 秒重试，最多尝试 3 次。
+手动执行：任务列表点「运行」即可立即开始。
 
 ### 5. 排障
 

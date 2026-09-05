@@ -3,7 +3,9 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent
-DEFAULT_RANDOM_DELAY_MAX_MINUTES = 30
+# Random start delay is opt-in for the Qinglong form: set CHECKIN_RANDOM_DELAY_MAX
+# (minutes) to enable it.
+DEFAULT_RANDOM_DELAY_MAX_MINUTES = 0
 NO_DELAY_FLAG = "--no-delay"
 
 
@@ -45,10 +47,7 @@ def _resolve_max_delay_seconds() -> int:
     try:
         minutes = int(raw_value)
     except ValueError:
-        log(
-            f"Invalid CHECKIN_RANDOM_DELAY_MAX={raw_value!r}, "
-            f"using default {DEFAULT_RANDOM_DELAY_MAX_MINUTES} minutes"
-        )
+        log(f"Invalid CHECKIN_RANDOM_DELAY_MAX={raw_value!r}, ignoring")
         return DEFAULT_RANDOM_DELAY_MAX_MINUTES * 60
 
     if minutes < 0:
@@ -66,7 +65,7 @@ def main(target: str, argv: list[str] | None = None) -> int:
     else:
         max_delay_seconds = _resolve_max_delay_seconds()
         if max_delay_seconds <= 0:
-            log("Random start delay is disabled (CHECKIN_RANDOM_DELAY_MAX=0)")
+            log("Random start delay is disabled")
         else:
             apply_random_start_delay(max_delay_seconds=max_delay_seconds)
 
