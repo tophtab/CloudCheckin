@@ -85,10 +85,10 @@ docker compose run --rm codercheckin python run.py
 | 唯一值 | `codercheckin` |
 | 拉取方式 | 公开仓库留空；私有仓库选「用户名密码/Token」（GitHub PAT，需 repo 权限） |
 | 白名单 | `nodeseek_task.py\|deepflood_task.py\|v2ex_task.py`（匹配脚本路径的正则，多个用 `\|` 分隔） |
-| 依赖文件 | 留空（该字段用于复制额外脚本文件，不安装依赖） |
+| 依赖文件 | `.`（把整仓库的 .py/.js 复制进脚本目录；共享模块和平台包靠它搬运，不生成额外任务） |
 
-保存后手动运行一次订阅：整仓库代码进入 `scripts/tophtab_codercheckin_main/`（目录名由作者/仓库名/分支自动生成），定时任务里自动生成三个任务。
-仓库里的 `tests/`、`README.md` 等会一并拉下来，但白名单之外不会生成任务。
+保存后手动运行一次订阅：白名单匹配的三个平台脚本和「依赖文件」匹配的共享代码都会复制进 `scripts/tophtab_codercheckin_main/`（目录名由作者/仓库名/分支自动生成），定时任务里自动生成三个任务。
+白名单决定生成哪些任务；`qinglong_task.py`、平台包等共享代码靠「依赖文件」复制进脚本目录，不会生成任务。
 
 ### 2. 安装 Python 依赖
 
@@ -142,7 +142,7 @@ COOKIE_CLOUD_PASSWORD=扩展里的加密密码
 | CookieCloud 拉取失败 / 网络不可达 | 青龙容器可能访问不了公网地址，改用内网地址（如 `http://192.168.31.100:8088`） |
 | CookieCloud 中未找到某平台 Cookie | 浏览器扩展确认同步域名覆盖对应站点，手动同步一次后重跑 |
 | 依赖安装失败 | 查看「依赖管理」日志里的完整报错；网络不通时改用国内 pip 镜像（见第 2 步） |
-| 日志出现 `ImportError` / `ModuleNotFoundError` | 确认代码是通过订阅整仓库拉取的，不要只复制单个脚本文件 |
+| 日志出现 `ImportError` / `ModuleNotFoundError` | 「依赖文件」没填：共享代码（`qinglong_task.py`、平台包等）靠它复制进脚本目录（见第 1 步） |
 
 ## 支持平台
 
