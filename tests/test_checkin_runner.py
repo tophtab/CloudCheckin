@@ -1,3 +1,4 @@
+import checkin_runner
 import io
 import subprocess
 import sys
@@ -10,6 +11,7 @@ from checkin_runner import (
     TargetExecutionError,
     parse_targets,
     run_targets,
+    validate_curl_cffi_version,
     validate_target_cookies,
 )
 from tests.log_assertions import assert_timestamped_lines
@@ -403,3 +405,26 @@ def test_run_targets_wraps_subprocess_start_failures_with_target_context(
     message = str(excinfo.value)
     assert "Check-in target 'v2ex' failed before it could start" in message
     assert "Failed to start module 'v2ex.v2ex': exec format error" in message
+
+
+def test_validate_curl_cffi_version_passes_when_pinned(monkeypatch) -> None:
+    monkeypatch.setattr(checkin_runner.metadata, "version", lambda name: "0.14.0")
+
+    validate_curl_cffi_version()
+
+
+def test_validate_curl_cffi_version_fails_on_mismatch(monkeypatch) -> None:
+    monkeypatch.setattr(checkin_runner.metadata, "version", lambda name: "0.17.1")
+
+    with pytest.raises(RuntimeError, match="does not match the pinned"):
+        validate_curl_cffi_version()
+
+
+def test_validate_curl_cffi_version_fails_when_missing(monkeypatch) -> None:
+    def raise_missing(name: str) -> str:
+        raise checkin_runner.metadata.PackageNotFoundError(name)
+
+    monkeypatch.setattr(checkin_runner.metadata, "version", raise_missing)
+
+    with pytest.raises(RuntimeError, match="not installed"):
+        validate_curl_cffi_version()

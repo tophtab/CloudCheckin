@@ -5,6 +5,11 @@ import os
 # Network timeouts
 REQUEST_TIMEOUT_SECONDS = 30
 
+# curl_cffi is pinned project-wide (requirements.txt / pyproject.toml). The
+# import-time check exists because Qinglong installs dependencies by hand,
+# where a later unpinned install can silently replace the pinned one.
+REQUIRED_CURL_CFFI_VERSION = "0.14.0"
+
 # User agents
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "

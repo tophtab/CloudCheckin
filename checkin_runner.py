@@ -6,8 +6,10 @@ import time
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
+from importlib import metadata
 from typing import IO, TypeAlias
 
+from config import REQUIRED_CURL_CFFI_VERSION
 from cookiecloud.client import resolve_cookie_value
 from runtime_log import log
 
@@ -230,6 +232,28 @@ def _print_failure_output(target: str, recent_output: list[tuple[str, str]]) -> 
     log(f"Recent output from failed target '{target}':")
     for line in _format_failure_output_lines(recent_output):
         log(line)
+
+
+def validate_curl_cffi_version() -> None:
+    """Fail fast when curl_cffi is missing or is not the pinned version."""
+    try:
+        installed = metadata.version("curl_cffi")
+    except metadata.PackageNotFoundError:
+        raise RuntimeError(
+            "curl_cffi is not installed; install the pinned version: "
+            f"pip3 install curl_cffi=={REQUIRED_CURL_CFFI_VERSION}"
+        ) from None
+    if installed != REQUIRED_CURL_CFFI_VERSION:
+        raise RuntimeError(
+            f"curl_cffi {installed} does not match the pinned version "
+            f"{REQUIRED_CURL_CFFI_VERSION}; reinstall with: "
+            f"pip3 install curl_cffi=={REQUIRED_CURL_CFFI_VERSION}"
+        )
+
+
+# Enforced at import time so a wrong curl_cffi aborts before any delay,
+# cookie resolution, or network request happens.
+validate_curl_cffi_version()
 
 
 def run_targets(
